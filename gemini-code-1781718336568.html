@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CajuNews — Jornal Escolar Turma 202</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght=0,400;0,700;0,900;1,400&family=EB+Garamond:ital,wght=0,400;0,500;1,400&family=Oswald:wght=300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+:root{
+  --verde:#0f6d2c;
+  --vermelho:#bf2217;
+  --amarelo:#d4920a;
+  --azul:#1a4e7a;
+  --roxo:#6a1b9a;
+  --ink:#111;
+  --papel:#fdfaf4;
+  --papel2:#f4f0e6;
+  --cinza:#555;
+  --linha:#aaa;
+  --bg:var(--papel);
+  --texto:var(--ink);
+  --texto2:#222;
+  --borda:var(--linha);
+}
+[data-theme="dark"]{
+  --bg:#121212;
+  --texto:#f0ece4; --texto2:#ddd;
+  --borda:#333; --linha:#333;
+  --papel2:#1c1c1c;
+  --ink:#f0ece4;
+}
+
+body{
+  background:var(--bg);
+  color:var(--texto);
+  font-family:'EB Garamond',Georgia,serif;
+  font-size:1.15rem;
+  line-height:1.6;
+  transition:background .3s, color .3s;
+}
+a{color:inherit;text-decoration:none}
+
+.container{max-width:1000px;margin:0 auto;padding:0 1.5rem}
+
+.reveal{opacity:0;transform:translateY(15px);transition:opacity .6s ease, transform .6s ease}
+.reveal.visible{opacity:1;transform:none}
+
+/* ══ MODAIS ══ */
+.modal-overlay{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.85);
+  backdrop-filter: blur(4px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s ease;padding:1rem;
+}
+.modal-overlay.aberto{opacity:1;pointer-events:all}
+.modal{
+  background:var(--bg);max-width:750px;width:100%;
+  max-height:90vh;overflow-y:auto;
+  padding:2.5rem;position:relative;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  transform:scale(0.95);transition:transform .3s ease;
+  border: 1px solid var(--borda);
+}
+.modal-overlay.aberto .modal{transform:scale(1)}
+.modal-fechar{position:absolute;top:1.5rem;right:1.5rem;background:none;border:none;cursor:pointer;font-size:1.8rem;color:var(--cinza);transition:color .2s}
+.modal-fechar:hover{color:var(--vermelho)}
+.modal-tag{font-family:'Oswald',sans-serif;font-size:.7rem;letter-spacing:.25em;text-transform:uppercase;color:var(--verde);margin-bottom:.8rem}
+.modal-titulo{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;line-height:1.15;margin-bottom:1.5rem}
+.modal-corpo{font-size:1.15rem;line-height:1.85;color:var(--texto2)}
+.modal-corpo p+p{margin-top:1.2rem}
+.modal-img-container {width:100%; margin-bottom:1.5rem; border:1px solid var(--borda); overflow:hidden;}
+.modal-img-container img {width:100%; display:block; object-fit:cover; max-height:400px;}
+
+/* ══ PAINEL ABAS ══ */
+.painel-abas { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--borda); }
+.aba-btn { 
+  background: none; border: none; padding: 0.6rem 1.2rem; font-family: 'Oswald', sans-serif; 
+  font-size: 0.85rem; text-transform: uppercase; cursor: pointer; color: var(--cinza); border-bottom: 2px solid transparent; margin-bottom: -2px;
+}
+.aba-btn.ativa { color: var(--ink); border-bottom: 2px solid var(--ink); font-weight: bold; }
+.aba-conteudo { display: none; }
+.aba-conteudo.ativa { display: block; }
+
+.form-grid {display:grid; grid-template-columns: 1fr 1fr; gap:1.2rem; margin-bottom:1.5rem;}
+@media(max-width:650px) { .form-grid {grid-template-columns: 1fr;} }
+.form-grupo{display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.8rem}
+.form-grupo.full {grid-column: 1 / -1;}
+.form-grupo label{font-family:'Oswald',sans-serif;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase;font-weight:600}
+.form-grupo input, .form-grupo select, .form-grupo textarea{
+  padding:0.6rem;background:var(--papel2);border:1px solid var(--borda);color:var(--texto);font-family:inherit;font-size:1rem;outline:none;
+}
+
+.seletor-container { display: flex; gap: 0.5rem; align-items: flex-end; }
+.btn-criar-novo { 
+  background: var(--verde); color: white; border: none; padding: 0.6rem; 
+  font-family: 'Oswald', sans-serif; font-size: 0.75rem; text-transform: uppercase; 
+  cursor: pointer; height: 38px; display: flex; align-items: center; justify-content: center; font-weight: bold;
+}
+
+/* MINI VISUALIZADOR DA FOTO FIXADO */
+.mini-preview-container {
+  grid-column: 1 / -1; background: var(--papel2); border: 1px dashed var(--borda); 
+  padding: 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+}
+.mini-preview-crop {
+  width: 240px; aspect-ratio: 16/10; overflow: hidden; border: 1px solid var(--borda); background: #e0e0e0; position: relative;
+}
+.mini-preview-crop img { 
+  width: 100%; height: 100%; object-fit: cover; display: none; 
+  transform-origin: center center; transition: none;
+}
+.mini-preview-txt { font-family: 'Oswald', sans-serif; font-size: 0.7rem; color: var(--cinza); text-transform: uppercase; }
+
+.controle-slider { display: flex; align-items: center; background: var(--bg); padding: 0.4rem; border: 1px solid var(--borda); }
+.controle-slider input[type="range"] { width: 100%; cursor: pointer; }
+
+.btn-salvar{
+  background:var(--ink);color:var(--bg);border:1px solid var(--borda);padding:0.8rem;font-family:'Oswald',sans-serif;font-size:0.85rem;text-transform:uppercase;letter-spacing:2px;cursor:pointer;transition:all 0.2s;width:100%;font-weight:600;
+}
+.btn-salvar:hover{background:var(--verde);color:#fff;border-color:var(--verde)}
+
+/* ══ LAYOUT EM COLUNAS PRINCIPAIS ══ */
+.layout-principal { display: grid; grid-template-columns: 1fr 280px; gap: 2rem; margin-bottom: 3rem; }
+@media(max-width:850px) { .layout-principal { grid-template-columns: 1fr; } }
+
+/* ══ ENQUETE INTERATIVA ══ */
+.box-enquete { background: var(--papel2); border: 1px solid var(--borda); padding: 1.5rem; height: max-content; }
+.enquete-titulo { font-family: 'Oswald', sans-serif; font-size: 0.9rem; letter-spacing: 1px; text-transform: uppercase; border-bottom: 2px solid var(--ink); padding-bottom: 0.4rem; margin-bottom: 1rem; }
+.enquete-pergunta { font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: bold; line-height: 1.3; margin-bottom: 1.2rem; }
+.enquete-opcoes { display: flex; flex-direction: column; gap: 0.6rem; }
+.enquete-btn { 
+  background: var(--bg); border: 1px solid var(--borda); padding: 0.6rem 1rem; text-align: left; 
+  font-family: inherit; font-size: 0.95rem; cursor: pointer; width: 100%; transition: all 0.2s;
+}
+.enquete-btn:hover { background: var(--ink); color: var(--bg); }
+.enquete-resultado-linha { margin-bottom: 0.8rem; }
+.enquete-txt-info { display: flex; justify-content: space-between; font-size: 0.9rem; font-weight: bold; margin-bottom: 0.2rem; }
+.enquete-barra-bg { background: rgba(0,0,0,0.1); height: 8px; border-radius: 4px; overflow: hidden; }
+.enquete-barra-fill { background: var(--verde); height: 100%; width: 0%; transition: width 0.6s ease; }
+
+/* ══ MURAL DE RECADOS ══ */
+.secao-mural { margin-top: 4rem; padding-bottom: 4rem; border-top: 2px solid var(--ink); padding-top: 2rem; }
+.mural-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; }
+@media(max-width: 700px) { .mural-grid { grid-template-columns: 1fr; } }
+.mural-form { background: var(--papel2); border: 1px solid var(--borda); padding: 1.5rem; height: max-content; }
+.mural-feed { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-height: 400px; overflow-y: auto; padding-right: 0.5rem; }
+@media(max-width: 500px) { .mural-feed { grid-template-columns: 1fr; } }
+.recado-card { background: var(--papel2); border: 1px solid var(--borda); padding: 1rem; position: relative; box-shadow: 2px 2px 0px rgba(0,0,0,0.05); }
+.recado-de { font-family: 'Oswald', sans-serif; font-size: 0.75rem; text-transform: uppercase; color: var(--vermelho); font-weight: bold; }
+.recado-texto { font-size: 1rem; line-height: 1.4; margin-top: 0.3rem; font-style: italic; }
+
+/* ══ META NAV ══ */
+.topo-meta {
+  display: flex; justify-content: space-between; font-family: 'Oswald', sans-serif; font-size: 0.75rem; letter-spacing: 1px;
+  text-transform: uppercase; padding: 0.3rem 0; border-bottom: 1px solid var(--borda);
+}
+.masthead-canva { text-align: center; padding: 1.5rem 0 1rem; }
+.masthead-canva h1 { font-family: 'Playfair Display', serif; font-size: clamp(3rem, 8vw, 5.5rem); font-weight: 700; letter-spacing: 1px; line-height: 1; margin-bottom: 0.3rem; }
+.masthead-canva .sub-slogan { font-family: 'Oswald', sans-serif; font-size: 0.7rem; letter-spacing: 4px; text-transform: uppercase; border-top: 1px solid var(--borda); border-bottom: 1px solid var(--borda); padding: 0.4rem 0; margin-top: 0.5rem; color: var(--cinza); }
+
+.apresentacao-pibid { text-align: justify; font-size: 1.05rem; color: #333; padding: 1.5rem 0; border-bottom: 1px solid var(--borda); margin-bottom: 2rem; }
+
+/* ══ MANCHETE PRINCIPAL COM AJUSTE FIXO ══ */
+.secao-manchete { width: 100%; }
+.card-principal { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2rem; cursor: pointer; padding-bottom: 1.5rem; }
+.card-p-img-wrap { background: var(--papel2); border: 1px solid var(--borda); aspect-ratio: 16/10; position: relative; overflow: hidden; }
+.card-p-img { 
+  width: 100%; height: 100%; object-fit: cover; display: none; 
+  transform-origin: center center; transition: none;
+}
+.card-p-placeholder { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: 'Oswald', sans-serif; font-size: 1rem; letter-spacing: 2px; color: var(--cinza); text-align: center; border: 2px dashed var(--borda); margin: 0.5rem; padding: 1rem; }
+.card-p-body { display: flex; flex-direction: column; justify-content: center; }
+.card-p-tag { font-family: 'Oswald', sans-serif; font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--vermelho); margin-bottom: 0.5rem; font-weight: 600; }
+.card-p-titulo { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700; line-height: 1.2; margin-bottom: 1rem; }
+.card-p-resumo { font-size: 1.05rem; color: #444; margin-bottom: 1rem; }
+
+@media(max-width:768px) { .card-principal { grid-template-columns: 1fr; gap: 1rem; } }
+
+/* ══ GRID CARDS COM AJUSTE FIXO ══ */
+.grid-4, .grid-novas{display:grid;grid-template-columns:repeat(4,1fr);gap:1.5rem;align-items:stretch; margin-top:1rem;}
+.titulo-setorial { font-family: 'Oswald', sans-serif; font-size: 0.8rem; letter-spacing: 2px; text-transform: uppercase; border-bottom: 2px solid var(--ink); padding-bottom: 0.3rem; margin-bottom: 1rem; }
+.card{cursor:pointer;background:none;border:none;text-align:left;display:flex;flex-direction:column;height:100%;}
+.card-img-wrap{width:100%;aspect-ratio:4/3;overflow:hidden;margin-bottom:0.8rem;background:var(--papel2);border: 1px solid var(--borda);position:relative;}
+.card-img{
+  width:100%; height:100%; object-fit:cover; display:block; 
+  transform-origin: center center; transition: none;
+}
+.card-placeholder { position:absolute;inset:0;display:flex;align-items:center;justify-content:center; font-family:'Oswald',sans-serif;font-size:0.85rem;letter-spacing:1px;color:#fff;font-weight:500; }
+.card-tag{font-family:'Oswald',sans-serif;font-size:.6rem;letter-spacing:1px;text-transform:uppercase;font-weight:600;margin-bottom:.4rem}
+.card-titulo{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;line-height:1.25;margin-bottom:.5rem;color:var(--texto);}
+.card-resumo{font-size:.95rem;line-height:1.5;color:#444;flex-grow:1;margin-bottom:1rem;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;}
+.card-footer {font-family:'Oswald',sans-serif; font-size:0.6rem; color:var(--cinza); border-top:1px solid var(--borda); padding-top:0.4rem; display:flex; justify-content:space-between;}
+
+@media(max-width:900px){ .grid-4, .grid-novas{grid-template-columns: 1fr 1fr;} }
+@media(max-width:550px){ .grid-4, .grid-novas{grid-template-columns: 1fr;} }
+
+.btn-escritor-nav {border:1px dashed var(--vermelho) !important; color:var(--vermelho) !important; font-weight:bold; background:none; padding:0.4rem 0.8rem; font-family:'Oswald',sans-serif; font-size:0.7rem; text-transform:uppercase; cursor:pointer;}
+.btn-escritor-nav:hover {background:var(--vermelho); color:#fff !important;}
+.btn-dark{background:none;border:none;cursor:pointer;color:var(--texto);font-size:1.1rem;}
+</style>
+</head>
+<body>
+
+<div class="modal-overlay" id="modalOverlay">
+  <article class="modal">
+    <button class="modal-fechar" id="modalFechar">✕</button>
+    <div class="modal-tag" id="modalTag"></div>
+    <h2 class="modal-titulo" id="modalTitulo"></h2>
+    <div class="modal-img-container" id="modalImgContainer">
+      <img id="modalImg" src="" alt="Imagem">
+    </div>
+    <div class="modal-corpo" id="modalCorpo"></div>
+  </article>
+</div>
+
+<div class="modal-overlay" id="modalEscritorOverlay">
+  <article class="modal" style="max-width: 800px; padding-top: 1.5rem;">
+    <button class="modal-fechar" id="modalEscritorFechar">✕</button>
+    
+    <div class="painel-abas">
+      <button type="button" class="aba-btn ativa" id="abaMatériasBtn" onclick="mudarAba('abaMaterias')">📰 Modificar Notícias</button>
+      <button type="button" class="aba-btn" id="abaGeralBtn" onclick="mudarAba('abaGeral')">⚙️ Configurações Gerais e Backup</button>
+    </div>
+    
+    <div id="abaMaterias" class="aba-conteudo ativa">
+      <form id="formEscritor">
+        <div class="form-grid">
+          <div class="form-grupo full seletor-container">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.4rem;">
+              <label for="editColuna">Escolha qual Seção vai Alterar:</label>
+              <select id="editColuna">
+                <option value="9">🚨 MANCHETE PRINCIPAL (EM BRANCO)</option>
+                <option value="6">Esportes</option>
+                <option value="7">Comédia</option>
+                <option value="4">Entrevistas</option>
+                <option value="8">Cultura</option>
+              </select>
+            </div>
+            <button type="button" class="btn-criar-novo" id="btnCriarNovo">➕ Criar Nova Manchete</button>
+          </div>
+          
+          <div class="form-grupo full" id="statusModoEdicao" style="display:none; background:#e2f0d9; padding:0.5rem; border:1px solid #b4c6e7; font-family:'Oswald', sans-serif; font-size:0.8rem; color:#385723;">
+            ✨ MODO: CRIANDO NOVA NOTÍCIA INDEPENDENTE
+          </div>
+
+          <div class="form-grupo">
+            <label for="editTag">Subtítulo / Cartola:</label>
+            <input type="text" id="editTag" required>
+          </div>
+          <div class="form-grupo full">
+            <label for="editTitulo">Título Principal:</label>
+            <input type="text" id="editTitulo" required>
+          </div>
+          <div class="form-grupo full">
+            <label for="editResumo">Resumo da Capa:</label>
+            <textarea id="editResumo" rows="2" required></textarea>
+          </div>
+          <div class="form-grupo">
+            <label>Subir Foto:</label>
+            <input type="file" id="editFile" accept="image/*">
+          </div>
+          <div class="form-grupo">
+            <label for="editUrl">Ou Link URL da Imagem:</label>
+            <input type="url" id="editUrl" placeholder="https://">
+          </div>
+
+          <div class="mini-preview-container">
+            <span class="mini-preview-txt">👁️ Mini-Abra: Pré-visualização do Corte da Imagem</span>
+            <div class="mini-preview-crop">
+              <img id="miniPreviewImg" src="" alt="Preview">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; width:100%; margin-top:0.5rem;">
+              <div class="form-grupo">
+                <label style="font-size:0.65rem;">🔍 Ajustar Zoom:</label>
+                <div class="controle-slider"><input type="range" id="editZoom" min="1" max="3" step="0.05" value="1"></div>
+              </div>
+              <div class="form-grupo">
+                <label style="font-size:0.65rem;">↕️ Posição Vertical:</label>
+                <div class="controle-slider"><input type="range" id="editPosicao" min="0" max="100" step="1" value="50"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grupo full">
+            <label for="editTexto">Matéria Completa (Texto do Modal):</label>
+            <textarea id="editTexto" rows="3" required></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn-salvar" id="btnSalvarTexto">Publicar Matéria e Foto</button>
+      </form>
+    </div>
+
+    <div id="abaGeral" class="aba-conteudo">
+      <form id="formGeral">
+        <div class="form-grid">
+          <div class="form-grupo">
+            <label for="cfgNomeJornal">Nome Principal do Jornal:</label>
+            <input type="text" id="cfgNomeJornal" value="CAJU NEWS">
+          </div>
+          <div class="form-grupo">
+            <label for="cfgSlogan">Slogan / Subtítulo Superior:</label>
+            <input type="text" id="cfgSlogan" value="WORLD OF PHOTOGRAPHY">
+          </div>
+          <div class="form-grupo full">
+            <label for="cfgApresentacao">Texto de Apresentação (PIBID):</label>
+            <textarea id="cfgApresentacao" rows="4"></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn-salvar" style="background: var(--verde); color: white; margin-bottom: 2rem;">Salvar Configurações do Site</button>
+      </form>
+
+      <hr style="border: 0; border-top: 1px dashed var(--borda); margin: 1.5rem 0;">
+      
+      <div style="background: var(--papel2); border: 1px dashed var(--borda); padding: 1.5rem;">
+        <h3 style="font-family:'Oswald', sans-serif; font-size: 1rem; text-transform:uppercase; margin-bottom:0.5rem; color:var(--vermelho)">💾 Salvar Trabalho Externamente (Backup)</h3>
+        <p style="font-size:0.95rem; margin-bottom:1rem; color:var(--cinza);">Baixe suas notícias ou restaure em outro computador usando os botões abaixo.</p>
+        <div style="display:flex; gap:1rem;">
+          <button type="button" class="btn-salvar" id="btnExportarData" style="background:var(--azul); color:white; font-size:0.75rem;">📥 Baixar Arquivo de Backup (.json)</button>
+          <div style="flex-grow:1; display:flex; flex-direction:column; gap:0.2rem;">
+            <label style="font-family:'Oswald',sans-serif; font-size:0.7rem;">📤 Restaurar arquivo:</label>
+            <input type="file" id="btnImportarData" accept=".json" style="font-size:0.8rem;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </article>
+</div>
+
+<div class="container">
+  
+  <div class="topo-meta">
+    <span>STUDIO SHOOWE</span>
+    <div>
+      <span id="siteDataAtual">CARREGANDO DATA...</span>
+      <button class="btn-dark" id="btnDark" style="margin-left:10px;">🌙</button>
+      <button id="btnAbrirEscritor" class="btn-escritor-nav" style="margin-left:10px;">✍️ Painel do Escritor</button>
+    </div>
+  </div>
+
+  <header class="masthead-canva reveal">
+    <h1 id="siteNomeJornal">CAJU NEWS</h1>
+    <div class="sub-slogan" id="siteSlogan">WORLD OF PHOTOGRAPHY</div>
+  </header>
+
+  <section class="apresentacao-pibid reveal" id="siteApresentacao">
+    Carregando informações do jornal...
+  </section>
+
+  <main class="layout-principal reveal">
+    <section class="secao-manchete">
+      <div class="card-principal card-gatilho" data-id="9" id="card-9">
+        <div class="card-p-img-wrap" id="wrap-9">
+          <div class="card-p-placeholder" id="placeholder-9">
+            <strong>[ Espaço da Manchete Principal ]</strong><br>Abra o Painel do Escritor no topo para preencher.
+          </div>
+          <img class="card-p-img" id="img-9" src="" alt="Destaque">
+        </div>
+        <div class="card-p-body" style="margin-top:1rem;">
+          <div class="card-p-tag" id="tag-9">Manchetes Principais</div>
+          <h2 class="card-p-titulo" id="titulo-9">Espaço reservado para a sua grande notícia</h2>
+          <p class="card-p-resumo" id="resumo-9">Use o painel de controle superior para preencher esta seção.</p>
+          <div class="card-footer">
+            <span>Caderno Principal</span>
+            <span style="color:var(--verde); font-weight: bold;">Clique para ler</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="box-enquete">
+      <div class="enquete-titulo">📊 Enquete Escolar</div>
+      <div class="enquete-pergunta">O que você está achando dos novos projetos do jornal escolar com o PIBID?</div>
+      <div id="enqueteConteudo"></div>
+    </aside>
+  </main>
+
+  <section class="reveal">
+    <div class="titulo-setorial">Colunas e Opinião</div>
+    <div class="grid-4">
+      
+      <article class="card card-gatilho" data-id="6" id="card-6">
+        <div class="card-img-wrap" id="wrap-6">
+          <div class="card-placeholder" style="background:var(--verde);">ESPORTES</div>
+          <img class="card-img" id="img-6" src="" alt="" style="display:none;">
+        </div>
+        <div class="card-tag" style="color:var(--verde);" id="tag-6">Esportes / Crônica</div>
+        <h3 class="card-titulo" id="titulo-6">Infraestrutura: A Reforma que Nunca Chega</h3>
+        <p class="card-resumo" id="resumo-6">Traves bambas, rede de vôlei pré-histórica.</p>
+        <div class="card-footer"><span>Esportes</span><span>Ler</span></div>
+      </article>
+
+      <article class="card card-gatilho" data-id="7" id="card-7">
+        <div class="card-img-wrap" id="wrap-7">
+          <div class="card-placeholder" style="background:var(--amarelo);">COMÉDIA</div>
+          <img class="card-img" id="img-7" src="" alt="" style="display:none;">
+        </div>
+        <div class="card-tag" style="color:var(--amarelo);" id="tag-7">Humor / Memes</div>
+        <h3 class="card-titulo" id="titulo-7">Copa do Mundo e a Resenha dos Corredores</h3>
+        <p class="card-resumo" id="resumo-7">Os melhores palpites furados.</p>
+        <div class="card-footer"><span>Humor</span><span>Ler</span></div>
+      </article>
+
+      <article class="card card-gatilho" data-id="4" id="card-4">
+        <div class="card-img-wrap" id="wrap-4">
+          <div class="card-placeholder" style="background:var(--azul);">ENTREVISTAS</div>
+          <img class="card-img" id="img-4" src="" alt="" style="display:none;">
+        </div>
+        <div class="card-tag" style="color:var(--azul);" id="tag-4">Espaço do Aluno</div>
+        <h3 class="card-titulo" id="titulo-4">O Que Pensa o Grêmio Estudantil?</h3>
+        <p class="card-resumo" id="resumo-4">Uma conversa aberta sobre as propostas.</p>
+        <div class="card-footer"><span>Entrevistas</span><span>Ler</span></div>
+      </article>
+
+      <article class="card card-gatilho" data-id="8" id="card-8">
+        <div class="card-img-wrap" id="wrap-8">
+          <div class="card-placeholder" style="background:var(--roxo);">CULTURA</div>
+          <img class="card-img" id="img-8" src="" alt="" style="display:none;">
+        </div>
+        <div class="card-tag" style="color:var(--roxo);" id="tag-8">Cultura / Eventos</div>
+        <h3 class="card-titulo" id="titulo-8">Arraiá da 202: Preparativos a Todo Vapor</h3>
+        <p class="card-resumo" id="resumo-8">Ensaios da quadrilha e doces.</p>
+        <div class="card-footer"><span>Cultura</span><span>Ler</span></div>
+      </article>
+
+    </div>
+  </section>
+
+  <section style="margin-top: 3rem;" class="reveal" id="secaoNovasMaterias">
+    <div class="titulo-setorial">Matérias Recentes</div>
+    <div class="grid-novas" id="containerNovasCards"></div>
+  </section>
+
+  <section class="secao-mural reveal">
+    <div class="titulo-setorial">💌 Mural de Recados & Correio Elegante</div>
+    <div class="mural-grid">
+      <form class="mural-form" id="formMuralRecado">
+        <div class="form-grupo">
+          <label for="muralNome">Seu Nome / Apelido (ou Anônimo):</label>
+          <input type="text" id="muralNome" placeholder="Ex: Aluno da 201" required>
+        </div>
+        <div class="form-grupo">
+          <label for="muralTexto">Deixe seu recado:</label>
+          <textarea id="muralTexto" rows="3" placeholder="Mande um salve, parabenize um colega..." required></textarea>
+        </div>
+        <button type="submit" class="btn-salvar" style="font-size:0.75rem;">Deixar Recado no Mural</button>
+      </form>
+      <div class="mural-feed" id="muralFeedRecados"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+function configurarDataBrasilia() {
+  const agora = new Date();
+  const formatador = new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: 'numeric', month: 'long', year: 'numeric'
+  });
+  document.getElementById('siteDataAtual').innerText = formatador.format(agora).toUpperCase();
+}
+configurarDataBrasilia();
+
+const bancoPadrao = {
+  9: { tag: "Manchetes Principais", titulo: "Espaço reservado para a sua grande notícia", resumo: "Use o painel de controle superior para preencher esta seção com a manchete mais importante do colégio.", imagem: "", corpo: "<p>Matéria em branco.</p>", zoom: "1", posicao: "50" },
+  4: { tag: "Espaço do Aluno", titulo: "O Que Pensa o Grêmio Estudantil?", resumo: "Uma conversa aberta sobre as propostas de eventos e a voz ativa junto à direção.", imagem: "", corpo: "<p>Conteúdo da entrevista...</p>", zoom: "1", posicao: "50" },
+  6: { tag: "Esportes / Crônica", titulo: "Infraestrutura: A Reforma que Nunca Chega", resumo: "Traves bambas, rede de vôlei pré-histórica e as árvores \"engolidoras\" de bola.", imagem: "", corpo: "<p>Conteúdo da crônica...</p>", zoom: "1", posicao: "50" },
+  7: { tag: "Humor / Memes", titulo: "Copa do Mundo e a Resenha dos Corredores", resumo: "Os melhores palpites furados e a zoeira completa do fundo da sala.", imagem: "", corpo: "<p>Conteúdo de humor...</p>", zoom: "1", posicao: "50" },
+  8: { tag: "Cultura / Eventos", titulo: "Arraiá da 202: Preparativos a Todo Vapor", resumo: "Ensaios da quadrilha, separação de doces e a montagem das barraquinhas.", imagem: "", corpo: "<p>Conteúdo da cultura...</p>", zoom: "1", posicao: "50" }
+};
+
+let noticiasDB = JSON.parse(localStorage.getItem('cajuNews_DB')) || bancoPadrao;
+let proximoIdNovo = parseInt(localStorage.getItem('cajuNews_proximoId')) || 100;
+let recadosDB = JSON.parse(localStorage.getItem('cajuNews_Recados')) || [
+  { nome: "Mariana 202", texto: "O jornal tá ficando lindo demais! Parabéns povo da redação!" },
+  { nome: "Prof. de História", texto: "Excelente iniciativa interdisciplinar. Orgulho dessa turma!" }
+];
+let votosEnquete = JSON.parse(localStorage.getItem('cajuNews_Votos')) || { total: 0, opcoes: { 1: 0, 2: 0, 3: 0 } };
+let usuarioJaVotou = localStorage.getItem('cajuNews_JaVotou') === "true";
+
+let configGeralDB = JSON.parse(localStorage.getItem('cajuNews_ConfigGeral')) || {
+  nome: "CAJU NEWS", slogan: "WORLD OF PHOTOGRAPHY",
+  apresentacao: "Somos os alunos da turma 202 do colégio Caldas Júnior e gostaríamos de apresentar o nosso jornal escolar, \"CajuNews\", que foi projetado juntamente com as pibidianas da PUCRS..."
+};
+
+let emModoCriacaoNova = false;
+
+// INTERFACE DOM
+const modalOverlay = document.getElementById('modalOverlay');
+const modalTag = document.getElementById('modalTag');
+const modalTitulo = document.getElementById('modalTitulo');
+const modalImgContainer = document.getElementById('modalImgContainer');
+const modalImg = document.getElementById('modalImg');
+const modalCorpo = document.getElementById('modalCorpo');
+const modalFechar = document.getElementById('modalFechar');
+const modalEscritorOverlay = document.getElementById('modalEscritorOverlay');
+const modalEscritorFechar = document.getElementById('modalEscritorFechar');
+const btnAbrirEscritor = document.getElementById('btnAbrirEscritor');
+const formEscritor = document.getElementById('formEscritor');
+const editColuna = document.getElementById('editColuna');
+const btnCriarNovo = document.getElementById('btnCriarNovo');
+const statusModoEdicao = document.getElementById('statusModoEdicao');
+const btnSalvarTexto = document.getElementById('btnSalvarTexto');
+const miniPreviewImg = document.getElementById('miniPreviewImg');
+const editZoom = document.getElementById('editZoom');
+const editPosicao = document.getElementById('editPosicao');
+
+function mudarAba(idAba) {
+  document.querySelectorAll('.aba-conteudo').forEach(el => el.classList.remove('ativa'));
+  document.querySelectorAll('.aba-btn').forEach(el => el.classList.remove('ativa'));
+  document.getElementById(idAba).classList.add('ativa');
+  document.getElementById(idAba + 'Btn').classList.add('ativa');
+}
+
+function abrirModal(id) {
+  const dados = noticiasDB[id];
+  if(!dados) return;
+  modalTag.innerText = dados.tag;
+  modalTitulo.innerText = dados.titulo;
+  modalCorpo.innerHTML = dados.corpo;
+  if (dados.imagem) {
+    modalImg.src = dados.imagem;
+    modalImgContainer.style.display = "block";
+  } else {
+    modalImgContainer.style.display = "none";
+  }
+  modalOverlay.classList.add('aberto');
+}
+
+function vincularGatilhosModais() {
+  document.querySelectorAll('.card-gatilho').forEach(item => {
+    item.replaceWith(item.cloneNode(true)); 
+  });
+  document.querySelectorAll('.card-gatilho').forEach(item => {
+    item.addEventListener('click', () => abrirModal(item.getAttribute('data-id')));
+  });
+}
+
+function renderizarEnquete() {
+  const container = document.getElementById('enqueteConteudo');
+  if (usuarioJaVotou) {
+    let t = votosEnquete.total || 1;
+    let p1 = Math.round((votosEnquete.opcoes[1] / t) * 100) || 0;
+    let p2 = Math.round((votosEnquete.opcoes[2] / t) * 100) || 0;
+    let p3 = Math.round((votosEnquete.opcoes[3] / t) * 100) || 0;
+
+    container.innerHTML = `
+      <div class="enquete-resultado-linha">
+        <div class="enquete-txt-info"><span>🔥 Tá sensacional!</span><span>${p1}%</span></div>
+        <div class="enquete-barra-bg"><div class="enquete-barra-fill" style="width:${p1}%"></div></div>
+      </div>
+      <div class="enquete-resultado-linha">
+        <div class="enquete-txt-info"><span>👍 Legal, interativo</span><span>${p2}%</span></div>
+        <div class="enquete-barra-bg"><div class="enquete-barra-fill" style="width:${p2}%"></div></div>
+      </div>
+      <div class="enquete-resultado-linha">
+        <div class="enquete-txt-info"><span>😐 Pode melhorar</span><span>${p3}%</span></div>
+        <div class="enquete-barra-bg"><div class="enquete-barra-fill" style="width:${p3}%"></div></div>
+      </div>
+      <p style="font-size:0.75rem; text-align:center; color:var(--cinza); margin-top:1rem;">Total: ${votosEnquete.total} votos.</p>
+    `;
+  } else {
+    container.innerHTML = `
+      <div class="enquete-opcoes">
+        <button class="enquete-btn" onclick="votarEnquete(1)">🔥 Tá sensacional!</button>
+        <button class="enquete-btn" onclick="votarEnquete(2)">👍 Legal, interativo</button>
+        <button class="enquete-btn" onclick="votarEnquete(3)">😐 Pode melhorar</button>
+      </div>
+    `;
+  }
+}
+
+function votarEnquete(opcao) {
+  votosEnquete.total += 1;
+  votosEnquete.opcoes[opcao] += 1;
+  usuarioJaVotou = true;
+  localStorage.setItem('cajuNews_Votos', JSON.stringify(votosEnquete));
+  localStorage.setItem('cajuNews_JaVotou', "true");
+  renderizarEnquete();
+}
+
+function renderizarMural() {
+  const feed = document.getElementById('muralFeedRecados');
+  feed.innerHTML = "";
+  recadosDB.slice().reverse().forEach(rec => {
+    const card = document.createElement('div');
+    card.className = "recado-card";
+    card.innerHTML = `
+      <span class="recado-de">De: ${rec.nome}</span>
+      <p class="recado-texto">"${rec.texto}"</p>
+    `;
+    feed.appendChild(card);
+  });
+}
+
+document.getElementById('formMuralRecado').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const nome = document.getElementById('muralNome').value.trim();
+  const texto = document.getElementById('muralTexto').value.trim();
+  if(nome && texto) {
+    recadosDB.push({ nome, texto });
+    localStorage.setItem('cajuNews_Recados', JSON.stringify(recadosDB));
+    renderizarMural();
+    document.getElementById('muralTexto').value = "";
+  }
+});
+
+// 🔄 RENDERIZAÇÃO E ATUALIZAÇÃO CORRIGIDA DAS IMAGENS
+function renderizarTudo() {
+  document.getElementById('siteNomeJornal').innerText = configGeralDB.nome;
+  document.getElementById('siteSlogan').innerText = configGeralDB.slogan;
+  document.getElementById('siteApresentacao').innerText = configGeralDB.apresentacao;
+  
+  document.getElementById('cfgNomeJornal').value = configGeralDB.nome;
+  document.getElementById('cfgSlogan').value = configGeralDB.slogan;
+  document.getElementById('cfgApresentacao').value = configGeralDB.apresentacao;
+
+  [9, 4, 6, 7, 8].forEach(id => {
+    const dados = noticiasDB[id];
+    if(dados) {
+      if(document.getElementById(`tag-${id}`)) document.getElementById(`tag-${id}`).innerText = dados.tag;
+      if(document.getElementById(`titulo-${id}`)) document.getElementById(`titulo-${id}`).innerText = dados.titulo;
+      if(document.getElementById(`resumo-${id}`)) document.getElementById(`resumo-${id}`).innerText = dados.resumo;
+      
+      const imgElement = document.getElementById(`img-${id}`);
+      const placeholder = document.getElementById(`placeholder-${id}`) || document.querySelector(`#wrap-${id} .card-placeholder`);
+      
+      if (dados.imagem && imgElement) {
+        imgElement.src = dados.imagem;
+        imgElement.style.display = "block";
+        // Aplicação limpa e direta do zoom e posição vertical
+        imgElement.style.transform = `scale(${dados.zoom || 1})`;
+        imgElement.style.objectPosition = `center ${dados.posicao || 50}%`;
+        if(placeholder) placeholder.style.display = "none";
+      } else if (imgElement) {
+        imgElement.style.display = "none";
+        if(placeholder) placeholder.style.display = "flex";
+      }
+    }
+  });
+
+  const containerNovas = document.getElementById('containerNovasCards');
+  containerNovas.innerHTML = "";
+  
+  Object.keys(noticiasDB).forEach(idKey => {
+    const id = parseInt(idKey);
+    if(id >= 100) {
+      const dados = noticiasDB[id];
+      const novoCard = document.createElement('article');
+      novoCard.className = "card card-gatilho";
+      novoCard.setAttribute('data-id', id);
+      novoCard.id = `card-${id}`;
+      
+      novoCard.innerHTML = `
+        <div class="card-img-wrap" id="wrap-${id}">
+          <div class="card-placeholder" style="background:var(--ink);">NEWS</div>
+          <img class="card-img" id="img-${id}" src="" alt="" style="display:none;">
+        </div>
+        <div class="card-tag" style="color:var(--ink);" id="tag-${id}">${dados.tag}</div>
+        <h3 class="card-titulo" id="titulo-${id}">${dados.titulo}</h3>
+        <p class="card-resumo" id="resumo-${id}">${dados.resumo}</p>
+        <div class="card-footer"><span>Enviado</span><span>Ler</span></div>
+      `;
+      containerNovas.appendChild(novoCard);
+
+      if(dados.imagem) {
+        const imgEl = document.getElementById(`img-${id}`);
+        imgEl.src = dados.imagem;
+        imgEl.style.display = "block";
+        imgEl.style.transform = `scale(${dados.zoom || 1})`;
+        imgEl.style.objectPosition = `center ${dados.posicao || 50}%`;
+        const placeholder = document.querySelector(`#wrap-${id} .card-placeholder`);
+        if(placeholder) placeholder.style.display = "none";
+      }
+    }
+  });
+
+  vincularGatilhosModais();
+  renderizarEnquete();
+  renderizarMural();
+}
+
+btnAbrirEscritor.addEventListener('click', () => {
+  const senhaInformada = prompt("Digite a senha de acesso dos escritores:");
+  if (senhaInformada === "bolsolula") {
+    desativarModoCriacaoNova(); 
+    carregarDadosForm(editColuna.value);
+    modalEscritorOverlay.classList.add('aberto');
+  } else if (senhaInformada !== null) {
+    alert("Senha incorreta!");
+  }
+});
+
+editColuna.addEventListener('change', (e) => {
+  desativarModoCriacaoNova();
+  carregarDadosForm(e.target.value);
+});
+
+btnCriarNovo.addEventListener('click', () => {
+  emModoCriacaoNova = true;
+  statusModoEdicao.style.display = "block";
+  btnSalvarTexto.innerText = "Adicionar Nova Notícia ao Jornal";
+  
+  document.getElementById('editTag').value = "Nova Categoria";
+  document.getElementById('editTitulo').value = "";
+  document.getElementById('editResumo').value = "";
+  document.getElementById('editTexto').value = "";
+  document.getElementById('editUrl').value = "";
+  editZoom.value = "1"; editPosicao.value = "50";
+  document.getElementById('editFile').value = '';
+  miniPreviewImg.style.display = 'none'; miniPreviewImg.src = '';
+});
+
+function desativarModoCriacaoNova() {
+  emModoCriacaoNova = false;
+  statusModoEdicao.style.display = "none";
+  btnSalvarTexto.innerText = "Publicar Matéria e Foto";
+}
+
+function carregarDadosForm(id) {
+  const noticia = noticiasDB[id];
+  if(!noticia) return;
+  document.getElementById('editTag').value = noticia.tag;
+  document.getElementById('editTitulo').value = noticia.titulo;
+  document.getElementById('editResumo').value = noticia.resumo;
+  document.getElementById('editTexto').value = noticia.corpo;
+  document.getElementById('editUrl').value = noticia.imagem.startsWith('data:') ? '' : noticia.imagem;
+  editZoom.value = noticia.zoom || "1";
+  editPosicao.value = noticia.posicao || "50";
+
+  if(noticia.imagem) {
+    miniPreviewImg.src = noticia.imagem;
+    miniPreviewImg.style.display = 'block';
+    atualizarMiniPreviewEfeito();
+  } else {
+    miniPreviewImg.style.display = 'none';
+  }
+}
+
+// Atualização de CSS em tempo real sem saltos ou bugs
+function atualizarMiniPreviewEfeito() {
+  miniPreviewImg.style.transform = `scale(${editZoom.value})`;
+  miniPreviewImg.style.objectPosition = `center ${editPosicao.value}%`;
+}
+editZoom.addEventListener('input', atualizarMiniPreviewEfeito);
+editPosicao.addEventListener('input', atualizarMiniPreviewEfeito);
+
+// Listener para links de imagem via URL externa
+document.getElementById('editUrl').addEventListener('input', function() {
+  if(this.value.trim() !== "") {
+    miniPreviewImg.src = this.value;
+    miniPreviewImg.style.display = 'block';
+    atualizarMiniPreviewEfeito();
+  }
+});
+
+document.getElementById('editFile').addEventListener('change', function(e) {
+  if (this.files && this.files[0]) {
+    const r = new FileReader();
+    r.onload = function(ev) {
+      miniPreviewImg.src = ev.target.result;
+      miniPreviewImg.style.display = 'block';
+      atualizarMiniPreviewEfeito();
+    };
+    r.readAsDataURL(this.files[0]);
+  }
+});
+
+formEscritor.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const tagVal = document.getElementById('editTag').value;
+  const tituloVal = document.getElementById('editTitulo').value;
+  const resumoVal = document.getElementById('editResumo').value;
+  const corpoVal = document.getElementById('editTexto').value;
+  const zoomVal = editZoom.value; const posVal = editPosicao.value;
+  const imgVal = miniPreviewImg.src && !miniPreviewImg.src.endsWith('undefined') ? miniPreviewImg.src : "";
+
+  if (emModoCriacaoNova) {
+    const id = proximoIdNovo++;
+    noticiasDB[id] = { tag: tagVal, titulo: tituloVal, resumo: resumoVal, corpo: corpoVal, imagem: imgVal, zoom: zoomVal, posicao: posVal };
+    localStorage.setItem('cajuNews_proximoId', proximoIdNovo);
+    desativarModoCriacaoNova();
+  } else {
+    const id = editColuna.value;
+    noticiasDB[id] = { tag: tagVal, titulo: tituloVal, resumo: resumoVal, corpo: corpoVal, imagem: imgVal, zoom: zoomVal, posicao: posVal };
+  }
+
+  localStorage.setItem('cajuNews_DB', JSON.stringify(noticiasDB));
+  renderizarTudo();
+  modalEscritorOverlay.classList.remove('aberto');
+});
+
+document.getElementById('formGeral').addEventListener('submit', function(e) {
+  e.preventDefault();
+  configGeralDB.nome = document.getElementById('cfgNomeJornal').value;
+  configGeralDB.slogan = document.getElementById('cfgSlogan').value;
+  configGeralDB.apresentacao = document.getElementById('cfgApresentacao').value;
+  
+  localStorage.setItem('cajuNews_ConfigGeral', JSON.stringify(configGeralDB));
+  renderizarTudo();
+  modalEscritorOverlay.classList.remove('aberto');
+});
+
+// BACKUP
+document.getElementById('btnExportarData').addEventListener('click', () => {
+  const pack = {
+    noticias: noticiasDB, configs: configGeralDB, recados: recadosDB, votos: votosEnquete, idContador: proximoIdNovo
+  };
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(pack));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", "backup_cajunews_jornal.json");
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+});
+
+document.getElementById('btnImportarData').addEventListener('change', function(e) {
+  if (!this.files || !this.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      const parsed = JSON.parse(evt.target.result);
+      if(parsed.noticias && parsed.configs) {
+        noticiasDB = parsed.noticias; configGeralDB = parsed.configs;
+        if(parsed.recados) recadosDB = parsed.recados;
+        if(parsed.votos) votosEnquete = parsed.votos;
+        if(parsed.idContador) proximoIdNovo = parsed.idContador;
+
+        localStorage.setItem('cajuNews_DB', JSON.stringify(noticiasDB));
+        localStorage.setItem('cajuNews_ConfigGeral', JSON.stringify(configGeralDB));
+        localStorage.setItem('cajuNews_Recados', JSON.stringify(recadosDB));
+        localStorage.setItem('cajuNews_Votos', JSON.stringify(votosEnquete));
+        localStorage.setItem('cajuNews_proximoId', proximoIdNovo);
+
+        renderizarTudo();
+        alert("✨ Backup restaurado com sucesso!");
+        modalEscritorOverlay.classList.remove('aberto');
+      } else { alert("Formato inválido."); }
+    } catch(err) { alert("Erro ao ler backup."); }
+  };
+  reader.readAsText(this.files[0]);
+});
+
+modalFechar.addEventListener('click', () => modalOverlay.classList.remove('aberto'));
+modalEscritorFechar.addEventListener('click', () => modalEscritorOverlay.classList.remove('aberto'));
+document.getElementById('btnDark').addEventListener('click', () => {
+  const atual = document.documentElement.getAttribute('data-theme');
+  document.documentElement.setAttribute('data-theme', atual === 'dark' ? 'light' : 'dark');
+});
+
+renderizarTudo();
+
+window.addEventListener('scroll', () => {
+  document.querySelectorAll('.reveal').forEach(el => {
+    if(el.getBoundingClientRect().top < window.innerHeight * 0.95) el.classList.add('visible');
+  });
+});
+window.dispatchEvent(new Event('scroll'));
+</script>
+</body>
+</html>
